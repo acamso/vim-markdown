@@ -648,7 +648,13 @@ function! s:Markdown_GetUrlForPosition(lnum, col)
     endif
 
     let [l:left, l:right] = <sid>FindCornersOfSyntax(l:lnum, l:col)
-    return getline(l:lnum)[l:left - 1 : l:right - 1]
+    let l:url = getline(l:lnum)[l:left - 1 : l:right - 1]
+
+    " Expand environment variables and other shell expansion syntax.
+    " Note: Expansion is done here since this function is used to distinguish between a URL and path
+    " in <$NVIM_RC> {MARKDOWN}
+    return expand(l:url)
+
 endfunction
 
 " Front end for GetUrlForPosition.
@@ -715,8 +721,18 @@ if !exists('*s:EditUrlUnderCursor')
                         let l:ext = '.md'
                     endif
                 endif
-                let l:url = fnameescape(fnamemodify(expand('%:h').'/'.l:url.l:ext, ':.'))
+
+                " Build full relative path.
+                if l:url !~? $HOME
+                  let l:url = fnamemodify(expand('%:h').'/'.l:url.l:ext, ':.')
+                endif
+
+                " Escape path.
+                let l:url = fnameescape(l:url)
+
+                " Execute edit.
                 execute l:editmethod l:url
+
             endif
             if l:anchor !=# ''
                 silent! execute '/'.l:anchor

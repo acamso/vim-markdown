@@ -593,10 +593,10 @@ endfunction
 function! s:FindNextSyntax(lnum, col, name)
     let l:col = a:col
     let l:step = 1
-    while synIDattr(synID(a:lnum, l:col, 1), 'name') !=# a:name
+    while synIDattr(synID(a:lnum, l:col, 1), 'name') !=# a:name && l:col <= &textwidth
         let l:col += l:step
     endwhile
-    return [a:lnum, l:col]
+    return synIDattr(synID(a:lnum, l:col, 1), 'name') !=# a:name ? [0, 0] : [a:lnum, l:col]
 endfunction
 
 function! s:FindCornersOfSyntax(lnum, col)
@@ -646,6 +646,9 @@ function! s:Markdown_GetUrlForPosition(lnum, col)
     else
         return ''
     endif
+
+    " Return if no syntax found.
+    if [l:lnum, l:col] == [0, 0] | return | endif
 
     let [l:left, l:right] = <sid>FindCornersOfSyntax(l:lnum, l:col)
     let l:url = getline(l:lnum)[l:left - 1 : l:right - 1]
